@@ -27,14 +27,15 @@
             android:layout_height="wrap_content"/>
 
         <com.lwj.lwjtest_coustomview.LwjQQStepView
+            android:id="@+id/cv_qqstep"
             android:layout_marginTop="@dimen/dp_10"
             app:arcOuterColor="@color/color_1296DB"
             app:arcInnerColor="@color/color_969696"
             app:textStepColor="@color/color_00DE00"
-            app:textStepSize="@dimen/sp_16"
+            app:textStepSize="@dimen/sp_30"
             app:arcWidth="@dimen/dp_6"
-            android:layout_width="@dimen/dp_80"
-            android:layout_height="@dimen/dp_80"/>
+            android:layout_width="@dimen/dp_100"
+            android:layout_height="@dimen/dp_100"/>
     </LinearLayout>
 
 
