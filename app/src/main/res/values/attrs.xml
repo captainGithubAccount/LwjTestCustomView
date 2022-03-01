@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- TextView的名字 -->
+    <declare-styleable name="LwjTestView">
+        <!-- name属性名称, format格式 -->
+        <!--
+            string 文字、 color 颜色、 dimensionk 宽高 字体大小
+            integer 数字、 reference资源(drawable)
+
+
+        -->
+        <attr name="myText" format="string"/>
+        <attr name="textColor" format="color"/>
+        <attr name="myTextSize" format="dimension"/>
+        <attr name="android:maxLength" format="integer"/>
+        <attr name="android:background" format="reference|color"/>
+
+        <attr name="android:inputType">
+            <enum name="number" value="1"/>
+            <enum name="text" value="2"/>
+            <enum name="password" value="3"/>
+        </attr>
+    </declare-styleable>
+
+
+    <!--  QQ步数计步器  -->
+    <declare-styleable name="LwjQQStepView">
+        <attr name="arcWidth" format="dimension"/>
+        <attr name="arcOuterColor" format="color"/>
+        <attr name="arcInnerColor" format="color"/>
+        <attr name="textStepColor" format="color"/>
+        <attr name="textStepSize" format="dimension"/>
+    </declare-styleable>
+</resources>
