@@ -2,9 +2,11 @@ package com.lwj.lwjtest_coustomview
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.view.View
 import android.view.animation.DecelerateInterpolator
 import com.example.oinkredito.base.ui.controll.activity.BaseDbActivity
 import com.lwj.lwjtest_coustomview_testview.databinding.ActivityMainBinding
+import java.util.*
 
 class MainActivity : BaseDbActivity<ActivityMainBinding>(){
     override fun observe() {
@@ -21,6 +23,40 @@ class MainActivity : BaseDbActivity<ActivityMainBinding>(){
         valueAnimator.addUpdateListener {
             val currentStep: Float = it.animatedValue as Float
             cvQqstep.setCurrentStep(currentStep.toInt())
+        }
+        valueAnimator.start()
+
+        binding.btnLeftToRight.setOnClickListener {
+            leftToRight()
+        }
+
+        binding.btnRightToLeft.setOnClickListener {
+            rightToLeft()
+        }
+
+
+
+    }
+
+    fun leftToRight(){//从左向右滑，一开始是黑色, 随着滑动, 左边黑右边慢慢变蓝, 最终颜色为蓝色
+        binding.cvFontChangeColor.mSwipeDirection = LwjFontChangeColorView.Direction.SWIPE_LEFT_TO_RIGHT
+        val valueAnimator: ValueAnimator = ObjectAnimator.ofFloat(0F, 1F)
+        valueAnimator.duration = 2000
+        valueAnimator.addUpdateListener {
+            val currentProcess: Any = it.animatedValue
+
+            binding.cvFontChangeColor.mCurrentClipProgress = currentProcess as Float
+        }
+        valueAnimator.start()
+    }
+
+    fun rightToLeft(){//从右向左滑, 一开始是蓝色, 随着滑动, 左边蓝右边慢慢变黑, 最终变为黑色
+        binding.cvFontChangeColor.mSwipeDirection = LwjFontChangeColorView.Direction.SWIPE_RIGHT_TO_LEFT
+        val valueAnimator: ValueAnimator = ObjectAnimator.ofFloat(0F, 1F)
+        valueAnimator.duration = 2000
+        valueAnimator.addUpdateListener {
+            val currentProcess: Any = it.animatedValue
+            binding.cvFontChangeColor.mCurrentClipProgress = currentProcess as Float
         }
         valueAnimator.start()
     }

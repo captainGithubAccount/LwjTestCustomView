@@ -32,4 +32,14 @@
         <attr name="textStepColor" format="color"/>
         <attr name="textStepSize" format="dimension"/>
     </declare-styleable>
+
+    <!--   字体变色   -->
+    <declare-styleable name="LwjFontChangeColorView">
+        <attr name="originColor" format="color"/>
+        <attr name="changeColor" format="color"/>
+        <!--由于继承自TextView, 所以textSize属性不需要再定义了, 用Android自带的textSize属性即可-->
+        <attr name="appTextSize" format="dimension"/>
+    </declare-styleable>
+
+
 </resources>

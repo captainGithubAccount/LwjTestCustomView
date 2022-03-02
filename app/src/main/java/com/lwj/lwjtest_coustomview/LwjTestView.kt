@@ -14,9 +14,9 @@ import com.lwj.lwjtest_coustomview_testview.R
 
 
 class LwjTestView : View {
-    private var mText: String? = null
-    private var mTextSize: Int = 15 //默认15
-    private var mColor: Int = Color.BLACK
+    private var mAText: String? = null
+    private var mATextSize: Int = 15 //默认15
+    private var mAColor: Int = Color.BLACK
 
     private var mPaint: Paint? = null
 
@@ -32,25 +32,30 @@ class LwjTestView : View {
         //模板代码
         val array: TypedArray = context.obtainStyledAttributes(attrs, R.styleable.LwjTestView)
 
-        mText = array.getString(R.styleable.LwjTestView_myText)
+        mAText = array.getString(R.styleable.LwjTestView_myText)
 
-        mTextSize = array.getDimensionPixelSize(R.styleable.LwjTestView_myTextSize, sp2px(15))
+        mATextSize = array.getDimensionPixelSize(R.styleable.LwjTestView_myTextSize, sp2px(15))
 
-        mColor = array.getColor(R.styleable.LwjTestView_textColor, Color.BLACK)
+        mAColor = array.getColor(R.styleable.LwjTestView_textColor, Color.BLACK)
 
         //模板代码 -- 回收
         array.recycle()
 
+        initPaint()
+
+
+    }
+
+    private fun initPaint() {
         //初始化画笔
         mPaint = Paint()
         mPaint?.run{
             //设置抗锯齿
             isAntiAlias = true
             //设置字体大小和颜色
-            textSize = mTextSize.toFloat()
-            color = mColor
+            textSize = mATextSize.toFloat()
+            color = mAColor
         }
-
     }
 
     private fun sp2px(spValue: Int): Int {
@@ -72,13 +77,13 @@ class LwjTestView : View {
         if(widthMode == MeasureSpec.AT_MOST){
 
             val bounds = Rect()
-            mPaint?.getTextBounds(mText, 0, mText?.length!!, bounds)//获取文本rect
+            mPaint?.getTextBounds(mAText, 0, mAText?.length!!, bounds)//获取文本rect
             width = bounds.width() + paddingLeft + paddingEnd
         }
 
         if(heightMode == MeasureSpec.AT_MOST){
             val bounds = Rect()
-            mPaint?.getTextBounds(mText, 0, mText?.length!!, bounds)
+            mPaint?.getTextBounds(mAText, 0, mAText?.length!!, bounds)
             height = bounds.height() + paddingTop + paddingBottom
         }
 
@@ -96,8 +101,8 @@ class LwjTestView : View {
         val x: Int = paddingLeft
 
 
-        if(mText != null && mPaint != null){
-            canvas?.drawText(mText!!, x.toFloat(), baseLine.toFloat(), mPaint!!)
+        if(mAText != null && mPaint != null){
+            canvas?.drawText(mAText!!, x.toFloat(), baseLine.toFloat(), mPaint!!)
         }
 
     }
