@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.lwj.lwjtest_coustomview.LineChartActivity">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.5">
+        <com.lwj.lwjtest_coustomview.LwjLineChartView
+            android:id="@+id/lcv_test"
+            app:xPointGapSize="@dimen/dp_8"
+            android:paddingLeft="@dimen/dp_2"
+            android:paddingTop="2dp"
+            app:xAxisTextSize="@dimen/sp_10"
+            app:yAxisTextSize="@dimen/sp_10"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tv_60"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:text="60min" />
+        <TextView
+            android:id="@+id/tv_30"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:text="30min"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+        <TextView
+            android:id="@+id/tv_15"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:text="15min"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+        <TextView
+            android:id="@+id/tv_3"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:text="3min"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+    </LinearLayout>
+    <LinearLayout
+        android:background="@color/teal_200"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+
+
+</LinearLayout>

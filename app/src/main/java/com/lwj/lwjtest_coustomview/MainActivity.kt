@@ -2,11 +2,10 @@ package com.lwj.lwjtest_coustomview
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
-import android.view.View
 import android.view.animation.DecelerateInterpolator
 import com.example.oinkredito.base.ui.controll.activity.BaseDbActivity
 import com.lwj.lwjtest_coustomview_testview.databinding.ActivityMainBinding
-import java.util.*
+import java.lang.Exception
 
 class MainActivity : BaseDbActivity<ActivityMainBinding>(){
     override fun observe() {
@@ -14,6 +13,44 @@ class MainActivity : BaseDbActivity<ActivityMainBinding>(){
     }
 
     override fun ActivityMainBinding.initView() {
+        initQqStepView()
+        initFontChangeColorView()
+        initLoadingView()
+    }
+
+    private fun initLoadingView() {
+        binding.tvLoadingStart.setOnClickListener{
+            Thread {
+                while(true) {
+                    runOnUiThread {
+                        binding.cvLoadingView.changeCurrentDrawing()
+                    }
+                    try {
+                        Thread.sleep(1000)
+                    } catch(e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }.start()
+            /*val valueAnimator: ValueAnimator = ObjectAnimator.ofFloat(0F, 4000F)
+            valueAnimator.duration = 4000 * 1000
+            valueAnimator.addUpdateListener {
+                binding.cvLoadingView.changeCurrentDrawing()
+            }*/
+        }
+    }
+
+    private fun initFontChangeColorView() {
+        binding.btnLeftToRight.setOnClickListener {
+            leftToRight()
+        }
+
+        binding.btnRightToLeft.setOnClickListener {
+            rightToLeft()
+        }
+    }
+
+    private fun initQqStepView() {
         binding.cvQqstep.setMaxStep(10000)
 
         //属性动画
@@ -22,20 +59,9 @@ class MainActivity : BaseDbActivity<ActivityMainBinding>(){
         valueAnimator.interpolator = DecelerateInterpolator()
         valueAnimator.addUpdateListener {
             val currentStep: Float = it.animatedValue as Float
-            cvQqstep.setCurrentStep(currentStep.toInt())
+            binding.cvQqstep.setCurrentStep(currentStep.toInt())
         }
         valueAnimator.start()
-
-        binding.btnLeftToRight.setOnClickListener {
-            leftToRight()
-        }
-
-        binding.btnRightToLeft.setOnClickListener {
-            rightToLeft()
-        }
-
-
-
     }
 
     fun leftToRight(){//从左向右滑，一开始是黑色, 随着滑动, 左边黑右边慢慢变蓝, 最终颜色为蓝色

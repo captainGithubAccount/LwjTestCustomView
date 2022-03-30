@@ -59,7 +59,31 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <com.lwj.lwjtest_coustomview.LwjLoadingView
+                android:id="@+id/cv_loading_view"
+                android:layout_width="@dimen/dp_50"
+                android:layout_height="@dimen/dp_50"/>
 
+            <TextView
+                android:id="@+id/tv_loading_start"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/dp_10"
+                android:background="?attr/selectableItemBackground"
+                android:text="开始" />
+        </LinearLayout>
+        <com.lwj.lwjtest_coustomview.LwjStarGradeView
+            android:layout_gravity="center_horizontal"
+            app:starNumber="5"
+            app:starNormal="@drawable/ic_r"
+            app:starSelect="@drawable/ic_t"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
     </LinearLayout>
 

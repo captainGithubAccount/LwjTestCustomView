@@ -41,5 +41,72 @@
         <attr name="appTextSize" format="dimension"/>
     </declare-styleable>
 
+    <!--  打造炫酷进度条  -->
+    <declare-styleable name="LwjProgressBarView">
+        <attr name="barOriginColor" format="color"/>
+        <attr name="barAfterColor" format="color"/>
+    </declare-styleable>
 
+    <!--  加载view  -->
+    <declare-styleable name="LwjLoadingView">
+        <attr name="rectColor" format="color"/>
+        <attr name="triangleColor" format="color"/>
+        <attr name="circleColor" format="color"/>
+    </declare-styleable>
+
+    <declare-styleable name="LwjStarGradeView">
+        <attr name="starNormal" format="reference"/>
+        <attr name="starSelect" format="reference"/>
+        <attr name="starNumber" format="integer"/>
+        <attr name="starMargin" format="dimension"/>
+    </declare-styleable>
+
+    <!--  定义的三角函数view  -->
+    <declare-styleable name="LwjSinView">
+        <attr name="sinTextColor" format="color"/>
+        <attr name="sinTextSize" format="dimension"/>
+        <attr name="sinLineColor" format="color"/>
+        <attr name="sinLineStrokeSize" format="dimension"/>
+    </declare-styleable>
+    
+    <!--  折线图  -->
+    <declare-styleable name="LwjLineChartView">
+        <attr name="bgColor" format="color"/><!-- 自定义view背景颜色 -->
+        <attr name="rulerColor" format="color"/><!-- 标尺颜色 -->
+
+        <attr name="yRulerGapSize" format="dimension"/><!-- y轴线标尺间隔 -->
+        <attr name="xRulerGapSize" format="dimension"/><!-- x轴线标尺间隔 -->
+
+
+        <attr name="yRulerCountNum" format="integer" /><!--y轴标尺数量-->
+        <attr name="xPointGapSize" format="dimension"/> <!-- X轴每个坐标点横坐标间的距离 -->
+
+        <attr name="rulerLineSize" format="integer"/><!--标尺宽度-->
+
+        <!-- x轴时间文本颜色和大小 -->
+        <attr name="xAxisTextColor" format="color"/>
+        <attr name="xAxisTextSize" format="dimension"/>
+
+        <!-- y轴时间文本颜色和大小 -->
+        <attr name="yAxisTextSize" format="dimension"/>
+        <attr name="yAxisTextColor" format="color"/>
+
+        <attr name="lineChartColor" format="color"/><!-- 折线颜色 -->
+
+        <!--当前绘制点的反馈视图-->
+        <attr name="currentPointLineColor" format="color"/><!-- 反馈视图点左边横线和点右边横线 -->
+        <attr name="currentPointOutCircleColor" format="color"/><!-- 反馈视图当前点（即圆环） -->
+        <attr name="currentPointInnerCircleColor" format="color"/><!-- 反馈视图当前点（即内环） -->
+        <attr name="currentPointTextColor" format="color"/><!-- 反馈视图文本颜色 -->
+        <attr name="currentPointTextBgColor" format="color"/><!-- 反馈视图文本椭圆背景-->
+        <attr name="currentPointDashColor" format="color"/>
+        <attr name="currentPointTextSize" format="dimension"/><!--当前点文本大小-->
+
+        <!-- 图形填充颜色 -->
+
+
+
+
+        
+    </declare-styleable>
 </resources>
