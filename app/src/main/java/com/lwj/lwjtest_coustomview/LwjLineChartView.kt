@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
@@ -21,6 +20,7 @@ class LwjLineChartView : View {
     //endregion
 
     //region 绘制的表格相关
+    private val mPrecisionEstimate: Int = 20
     private var mTopDisplaySpace = dp2px(50)
     private var mTableHeight: Int = 0
     private var mTableWidth: Int = 0
@@ -35,26 +35,36 @@ class LwjLineChartView : View {
     var mHorRulerGapSize: Int = 0 //y轴横线标尺间隔 sp2dp
     var aHorRulerCountNum: Int = 11 //y轴标尺数量
     var aVerRulerCountNum: Int = 4 //x轴标尺数量
-    var mVerRulerGapSize: Int = 0 //竖直标尺间隙
+    var aDefaultVerRulerCountNum: Int = 4//默认一小时x轴标尺数量
+    var mVerRulerGapSize: Float = 0F //竖直标尺间隙
     // endregion
 
     //region 折线相关
-    //折线/折线bg路径
+    private var pointNumber = 1800//折线点的个数
+    private var aXPointInitGapSize: Float = 0F
     var mInitLeftMoveX: Float = 70F
     private var path: Path = Path()
     var aLineChartColor: Int = Color.BLUE //折线颜色
-    var aXPointGapSize: Int = 2 //折线X轴每个坐标点横坐标间的距离 sp2dp
-        set(value) {
+    var aXPointGapSize: Float = 2F //折线X轴每个坐标点横坐标间的距离 sp2dp
+        /*set(value) {
             field = value
             requestLayout()
             this.invalidate()
+        }*/
+
+    var mTimeType: Int = 60
+        set(value) {
+            field = value
+            requestLayout()
+            invalidate()
         }
     //endregion
 
     //region 接入的数据
     var valueDatas: ArrayList<String> = arrayListOf("11355.08", "11334.046", "11313.012", "11291.979", "11270.944", "11249.91", "11228.876", "11207.842", "11186.809", "11165.774", "11144.74")
-    var timeDatas: ArrayList<String> = arrayListOf("09:04:06", "09:04:06", "09:24:06", "09:44:06")
-    var lineChartDatas: ArrayList<String>? = null
+    var timeDatas: ArrayList<String> = arrayListOf("09:04:06", "09:04:06", "09:24:06", "09:44:06")//我需要的time数据
+    var timeAllLongDatas: ArrayList<Long> = arrayListOf()//从websocket获取的time数据
+    var lineChartDatas: ArrayList<Double> = arrayListOf()
     //endregion
 
     //region paint相关
@@ -135,16 +145,245 @@ class LwjLineChartView : View {
     private var lastX: Float = 0F
     //endregion
 
-    fun setLineChartData(list: ArrayList<String>) {
+    fun setLineChartData(list: ArrayList<Double>) {
         lineChartDatas = list
         invalidate()
+    }
+
+    fun setDatas(lineChartList: ArrayList<Double>, timeTempList: ArrayList<Long>){
+        lineChartDatas = lineChartList
+        timeAllLongDatas = timeTempList
+//        requestLayout()
+        invalidate()
+
     }
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attributeSet: AttributeSet?) : this(context, attributeSet!!, 0)
     constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int) : super(context, attributeSet, defStyleAttr) {
+        //initValue()
         initAttrs(context, attributeSet) //注意这里一定要先初始化属性, 再初始化画笔
         initPaints()
+    }
+
+
+    private fun drawCurrentPointTextBg(canvas: Canvas) {
+        mCurrentPointTextWidth = lineChartDatas?.get(lineChartDatas?.size!! - 1)?.toString()?.getDrawWidth(pCurrentPointTextPaint!!)?.toFloat()!!
+        mCurrentPointTextHeight = lineChartDatas?.get(lineChartDatas?.size!! - 1)?.toString()?.getDrawWidth(pCurrentPointTextPaint!!)?.toFloat()!!
+        mCurrentPointTextBgWidth =  mCurrentPointTextWidth + 2 * mCurrentPointTextBgHorPadding
+        mCurrentPointTextBgCriticalStartX = mWidth - mCurrentPointTextBgWidth//view/屏幕宽度 - 椭圆文本背景宽度 = 当拖拽距离过大导致椭圆背景显示不全时候的 椭圆背景开始绘制的起始坐标
+        if(mCurrentPointTextBgStartX > mCurrentPointTextBgCriticalStartX){
+            mCurrentPointTextBgStartX = mCurrentPointTextBgCriticalStartX
+        }
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace){
+            val rect: RectF = RectF(mCurrentPointTextBgStartX, lastY - mCurrentPointTextHeight / 4, mCurrentPointTextBgStartX + mCurrentPointTextBgWidth, lastY + mCurrentPointTextHeight / 4)
+            drawRoundRect(rect,50F, 50F, pCurrentPointTextBgPaint!!)
+        }
+    }
+
+    private fun drawCurrentPointText(canvas: Canvas) {
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace){
+            drawTextBase(lineChartDatas?.get(lineChartDatas?.size!! - 1).toString(), mCurrentPointTextBgStartX + mCurrentPointTextBgWidth/2 - mCurrentPointTextWidth/2, lastY, pCurrentPointTextPaint!!)
+        }
+
+    }
+
+
+    private fun drawCurrentPointLine(canvas: Canvas) {
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                drawLine(0F, lastY, lastX - mInnerRadius - mOutRingWidth, lastY, pCurrentPointLinePaint!!)
+                drawLine(lastX + mInnerRadius + mOutRingWidth, lastY, mCurrentPointTextBgStartX, lastY, pCurrentPointLinePaint!!)
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                drawLine(0F - mMoveX, lastY, lastX - mInnerRadius - mOutRingWidth - mMoveX, lastY, pCurrentPointLinePaint!!)
+                drawLine(lastX + mInnerRadius + mOutRingWidth - mMoveX, lastY, mCurrentPointTextBgStartX, lastY, pCurrentPointLinePaint!!)
+            }
+        }
+    }
+
+    private fun drawCurrentPointOutCircle(canvas: Canvas) {
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                drawCircle(lastX, lastY, mOutRadius, pCurrentPointOutCirclePaint!!)
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                drawCircle(lastX - mMoveX, lastY, mOutRadius, pCurrentPointOutCirclePaint!!)
+            }
+
+        }
+    }
+
+
+    private fun drawCurrentPointInnerCircle(canvas: Canvas) {
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                drawCircle(lastX, lastY, mInnerRadius, pCurrentPointInnerCirclePaint!!)
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                drawCircle(lastX - mMoveX, lastY, mInnerRadius, pCurrentPointInnerCirclePaint!!)
+            }
+        }
+    }
+
+    private fun drawCurrentPointDash(canvas: Canvas) {
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                drawLine(lastX, 0F, lastX, mTableHeight.toFloat(), pCurrentPointDashPaint!!)
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                drawLine(lastX - mMoveX, 0F, lastX - mMoveX, mTableHeight.toFloat(), pCurrentPointDashPaint!!)
+            }
+        }
+    }
+
+    //绘制折线和背景
+    private fun drawLineChart(canvas: Canvas, list: ArrayList<Double>) { //path需要重置, 否则会导致两次折线重叠
+        path.reset()
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) { //折线第一个点
+            val valuePercentFirst = (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(list[0].toString())) / (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(valueDatas[valueDatas.count() - 1]))
+            firstY = valuePercentFirst * mTableHeight
+            path.moveTo(0F, firstY)
+            //折线最后一个点x和y
+            val valuePercentLast = (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(list[lineChartDatas?.count()!! - 1].toString())) / (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(valueDatas[valueDatas.count() - 1]))
+            lastY = valuePercentLast * mTableHeight
+            lastX = (list.count() - 1) * aXPointGapSize.toFloat()
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                mCurrentPointTextBgStartX = lastX + mInnerRadius + mOutRingWidth + mCurrentPointRightLineWidth
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                mCurrentPointTextBgStartX = lastX + mInnerRadius + mOutRingWidth + mCurrentPointRightLineWidth - mMoveX
+            }
+            //折线中间点的y
+            var valueYProgress = 0F
+
+            //折线中间点的y
+            var valueXProgress = 0F
+
+            var linearGradient: LinearGradient = LinearGradient(0F, 0F, 0F, mTableHeight.toFloat(), intArrayOf(Color.parseColor("#99BAEFE6"), Color.parseColor("#99D7F5F0"), Color.parseColor("#99F9FEFD")), floatArrayOf(0.5f, 0.65f, 0.85f), Shader.TileMode.REPEAT)
+
+
+            //折线中间的点以及最后的点
+            repeat(list.count() - 1) {
+                val valuePercent = (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(list[it + 1].toString())) / (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(valueDatas[valueDatas.count() - 1]))
+                valueYProgress = valuePercent * mTableHeight
+                valueXProgress = (it + 1) * aXPointGapSize.toFloat()
+                path.lineTo(valueXProgress, valueYProgress)
+
+            }
+
+
+            pShadowPaint?.shader = linearGradient
+            if(list.count() * aXPointGapSize / mTableWidth < 2F) { //画线
+                drawPath(path, pLineChartPaint!!)
+                //画背景
+                path.lineTo(lastX, mTableHeight.toFloat())
+                path.lineTo(0F, mTableHeight.toFloat())
+                path.close()
+                drawLineChartBg(this, path)
+            } else if(list.count() * aXPointGapSize / mTableWidth > 2F) {
+                path.offset(-mMoveX, 0F) //画线
+                drawPath(path, pLineChartPaint!!)
+                //画背景
+                path.lineTo(lastX - mMoveX, mTableHeight.toFloat())
+                path.lineTo(0F - mMoveX, mTableHeight.toFloat())
+                path.close()
+                drawLineChartBg(this, path)
+            }
+        }
+    }
+
+
+    private fun drawLineChartBg(canvas: Canvas, path: Path) {
+        canvas.drawPath(path, pShadowPaint!!)
+    }
+
+    private fun drawYAxisText(canvas: Canvas) {
+        repeat(aHorRulerCountNum) {
+            canvas.withTranslation((width - mPaddingEndToTable + mPaddingRightTextToTable).toFloat(), (it * mHorRulerGapSize + paddingTop).toFloat() + mTopDisplaySpace) {
+                drawValueTextBase(it, mHorRulerGapSize / 10)
+            }
+        }
+    }
+
+    private fun drawXAxisText(canvas: Canvas) {
+        var y = mPaddingBoottomTextToTable / 2
+        canvas.withTranslation(paddingLeft.toFloat(), ((aHorRulerCountNum - 1) * mHorRulerGapSize + mPaddingBoottomTextToTable / 4 + mTopDisplaySpace).toFloat()) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                repeat(aVerRulerCountNum) {
+                    if(it == 0) {
+                        drawTimeTextBase(true, it, (0F + mVerRulerGapSize * it).toInt(), y)
+                    } else {
+                        drawTimeTextBase(false, it, (0F + mVerRulerGapSize * it).toInt(), y)
+                    }
+                }
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                var i = (lineChartDatas?.count()!! * aXPointGapSize) / mVerRulerGapSize
+                repeat(aVerRulerCountNum) {
+
+                    if(it == 0) {
+                        drawTimeTextBase(true, it, (0F + mVerRulerGapSize * it - mMoveX).toInt(), y)
+                    } else {
+                        drawTimeTextBase(false, it, (0F + mVerRulerGapSize * it - mMoveX).toInt(), y)
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    private fun drawTableRuler(canvas: Canvas) {
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                repeat(aHorRulerCountNum) {
+                    canvas.drawLine(0F, (it * mHorRulerGapSize).toFloat(), (mVerRulerGapSize * (aVerRulerCountNum - 1)).toFloat(), (it * mHorRulerGapSize).toFloat(), pRulerPaint!!)
+                }
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                repeat(aHorRulerCountNum) {
+                    canvas.drawLine(0F, (it * mHorRulerGapSize).toFloat(), mWidth.toFloat(), (it * mHorRulerGapSize).toFloat(), pRulerPaint!!)
+                }
+            }
+        }
+
+        //绘制竖线
+        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
+            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth < 2F) {
+                repeat(aVerRulerCountNum) {
+                    canvas.drawLine(0F + (it * mVerRulerGapSize).toFloat(), 0F, (it * mVerRulerGapSize).toFloat(), ((aHorRulerCountNum - 1) * mHorRulerGapSize).toFloat(), pRulerPaint!!)
+                }
+            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 2F) {
+                repeat(aVerRulerCountNum) {
+                    canvas.drawLine((it * mVerRulerGapSize).toFloat() - mMoveX, 0F, (it * mVerRulerGapSize).toFloat() - mMoveX, ((aHorRulerCountNum - 1) * mHorRulerGapSize).toFloat(), pRulerPaint!!)
+                }
+            }
+        }
+    }
+
+
+
+    /**
+     * @param dataIndex 集合里面数据的下标
+     * @param y 绘制的y坐标
+     * */
+    private fun Canvas.drawValueTextBase(dataIndex: Int, y: Int) {
+        val text = valueDatas[dataIndex] //param: 绘制文字的左边起始位置(即y轴线最中间位置减去中间文本的一半长度就是左边起始位置)
+        val textBounds = Rect()
+        pXAxisTimePaint?.getTextBounds(text, 0, text.length, textBounds)
+        mValueTextHeight = textBounds.height()
+        mValueTextWidth = textBounds.width()
+        val startDrawX: Int = 0 //param: 文字的基线
+        val fm: Paint.FontMetricsInt = pXAxisTimePaint!!.fontMetricsInt
+        val baseLine = y + (fm.bottom - fm.top) / 2 - fm.bottom
+        drawText(text, startDrawX.toFloat(), baseLine.toFloat(), pXAxisTimePaint!!)
+
+    }
+
+    /**
+     * @param string 绘制的文本内容
+     * @param startDrawX 绘制的文本起始坐标位置
+     * @param y 绘制的文本高度的一半所对应的y轴坐标
+     * @param paint 绘制文本的画笔
+     * */
+    private fun Canvas.drawTextBase(string: String, startDrawX: Float, y: Float, paint: Paint){
+        val fm: Paint.FontMetricsInt = paint.fontMetricsInt
+        val baseLine = y + (fm.bottom - fm.top) / 2 - fm.bottom
+        drawText(string, startDrawX, baseLine ,paint)
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -164,16 +403,150 @@ class LwjLineChartView : View {
                 } else if(mMoveX + mOffX >= mMoveFailX) {
                     mMoveX = mInitMoveX
                 }
+                //                requestLayout()
                 invalidate()
             }
             MotionEvent.ACTION_UP -> {
                 if(mInitMoveX - mMoveX > 5 && mInitMoveX - mMoveX < mMoveFailX) {
                     mMoveX = mInitMoveX
+                    //                    requestLayout()
                     invalidate()
                 }
             }
         }
         return true
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+
+        mHeight = measuredHeight
+        mWidth = measuredWidth
+        mHorRulerGapSize = (height - paddingTop - paddingBottom - mPaddingBoottomTextToTable - 2*mTopDisplaySpace) / (aHorRulerCountNum - 1) //这个20是给默认底部文字留的空间
+        mVerRulerGapSize = (width - paddingLeft - paddingRight - mPaddingEndToTable ) / (aDefaultVerRulerCountNum - 1).toFloat() //这个50是给默认右边文字留的空间
+
+        mTableHeight = mHorRulerGapSize * (aHorRulerCountNum - 1)
+        mTableWidth = width - paddingLeft - paddingRight - mPaddingEndToTable
+
+        //count
+        //初始60min时间段的两个点间距 @Param: mPrecisionEstimate 精度误差值
+        aXPointInitGapSize = (width - paddingLeft - paddingRight - mPaddingEndToTable )/ (pointNumber - 1).toFloat()
+        when(mTimeType){
+            60 -> aXPointGapSize = aXPointInitGapSize
+            30 -> aXPointGapSize = 2 * aXPointInitGapSize
+            15 -> aXPointGapSize = 4 * aXPointInitGapSize
+            3 -> aXPointGapSize = 10 * aXPointInitGapSize
+        }
+        if(pointNumber * aXPointGapSize / mTableWidth < 2F) {
+            mMoveX = ((pointNumber - 1) * aXPointGapSize - mTableWidth).toFloat()
+        } else if(pointNumber * aXPointGapSize / mTableWidth > 2F) {
+            mMoveX = ((pointNumber - 1) * aXPointGapSize - mTableWidth).toFloat() + mInitLeftMoveX
+        }
+
+        mInitMoveX = mMoveX
+
+        if(pointNumber * aXPointGapSize / mTableWidth < 2F) {
+            aVerRulerCountNum = aDefaultVerRulerCountNum
+        } else if(pointNumber * aXPointGapSize / mTableWidth > 2F) {
+            aVerRulerCountNum = ((pointNumber * aXPointGapSize) / mVerRulerGapSize + 1).toInt()
+        }
+    }
+
+
+
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas) //canvas?.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        //draw
+
+
+        if(lineChartDatas.count() > 0 && timeAllLongDatas.count() > 0){
+            convertDataToNeed(lineChartDatas, timeAllLongDatas)
+        }
+        if(lineChartDatas.count() > 0 && timeAllLongDatas.count() > 0){
+
+            canvas?.drawColor(Color.BLACK)
+            canvas?.run {
+                drawTableRuler(this)
+                drawXAxisText(this)
+                drawYAxisText(this)
+                lineChartDatas?.let {
+                    drawLineChart(this, it)
+                }
+                drawCurrentPointDash(this)
+                drawCurrentPointInnerCircle(this)
+                drawCurrentPointOutCircle(this)
+                drawCurrentPointLine(this)
+                drawCurrentPointTextBg(this)
+                drawCurrentPointText(this)
+            }
+
+        }
+
+    }
+
+
+
+
+    private fun convertDataToNeed(lineChartList: ArrayList<Double>, timeTempList: ArrayList<Long>) {
+        lineChartDatasToValueDatas(lineChartList)
+        timeAllLongDatasTotimeDatas(timeTempList)
+    }
+
+    private fun timeAllLongDatasTotimeDatas(timeTempAllList: ArrayList<Long>) {
+        val pointCountVerRulerGap = mTimeType*60/2/(aVerRulerCountNum -1)
+        timeDatas = timeTempAllList.map { it.toString() } as ArrayList<String>
+        for(i in 0 until aVerRulerCountNum){
+            timeDatas = timeDatas.filterIndexed { index, s ->  index == pointCountVerRulerGap * i} as ArrayList<String>
+        }
+
+    }
+
+    private fun lineChartDatasToValueDatas(lineChartList: ArrayList<Double>) {
+        valueDatas.clear()
+
+        var pointCountLeftMove: Float = mMoveX/aXPointGapSize + 1
+
+
+
+        /* val pointCountOnTable = (mTableWidth - mInitLeftMoveX)/aXPointGapSize + 1
+        val indexPointFirstInScreenShow = (pointNumber - pointCountLeftMove)
+        var lastIndex = (pointCountLeftMove + pointCountOnTable).ceil()
+        if(lastIndex >= 1800){
+            lastIndex = 1800
+        }else if(pointCountLeftMove <= 3){
+            lastIndex = 1800
+        }*/
+        val lineChartInScreenDatas = lineChartList.subList(pointCountLeftMove.ceil(), 1800 /*lastIndex*/)
+        val maxValue = lineChartInScreenDatas.maxOrNull()
+        val minValue = lineChartInScreenDatas.minOrNull()
+        val horRulerReduceValue = ((maxValue!! - minValue!!) / (aHorRulerCountNum - 1))
+        for(i in 0 until aHorRulerCountNum){
+            val ele = maxValue - (horRulerReduceValue) * i
+            valueDatas.add(ele.toString())
+        }
+
+
+    }
+
+
+
+
+//    -------------------------
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        val height = View.MeasureSpec.getSize(heightMeasureSpec) + mTopDisplaySpace
+        val width = View.MeasureSpec.getSize(widthMeasureSpec)
+        setMeasuredDimension(width, height)
+    }
+
+    fun dp2px(dp: Int): Int {
+        val density = context.resources.displayMetrics.density
+        return (dp * density + 0.5).toInt()
+    }
+
+    private fun sp2px(spValue: Int): Int {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue.toFloat(), resources.displayMetrics)
+            .toInt()
     }
 
     private fun initPaints() { //标尺画笔
@@ -190,7 +563,7 @@ class LwjLineChartView : View {
         pLineChartPaint = Paint()
         pLineChartPaint?.run {
             style = Paint.Style.STROKE
-            strokeWidth = 3F
+            strokeWidth = 1F
             isAntiAlias = true
             color = aLineChartColor
         }
@@ -274,212 +647,6 @@ class LwjLineChartView : View {
 
     }
 
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas) //canvas?.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        canvas?.drawColor(Color.BLACK)
-        canvas?.run {
-            drawTableRuler(this)
-            drawXAxisText(this)
-            drawYAxisText(this)
-            lineChartDatas?.let {
-                drawLineChart(this, it)
-            }
-            drawCurrentPointDash(this)
-            drawCurrentPointInnerCircle(this)
-            drawCurrentPointOutCircle(this)
-            drawCurrentPointLine(this)
-            drawCurrentPointTextBg(this)
-            drawCurrentPointText(this)
-        }
-    }
-
-    private fun drawCurrentPointTextBg(canvas: Canvas) {
-        mCurrentPointTextWidth = lineChartDatas?.get(lineChartDatas?.size!! - 1)?.getDrawWidth(pCurrentPointTextPaint!!)?.toFloat()!!
-        mCurrentPointTextHeight = lineChartDatas?.get(lineChartDatas?.size!! - 1)?.getDrawWidth(pCurrentPointTextPaint!!)?.toFloat()!!
-        mCurrentPointTextBgWidth =  mCurrentPointTextWidth + 2 * mCurrentPointTextBgHorPadding
-        mCurrentPointTextBgCriticalStartX = mWidth - mCurrentPointTextBgWidth//view/屏幕宽度 - 椭圆文本背景宽度 = 当拖拽距离过大导致椭圆背景显示不全时候的 椭圆背景开始绘制的起始坐标
-        if(mCurrentPointTextBgStartX > mCurrentPointTextBgCriticalStartX){
-            mCurrentPointTextBgStartX = mCurrentPointTextBgCriticalStartX
-        }
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace){
-            val rect: RectF = RectF(mCurrentPointTextBgStartX, lastY - mCurrentPointTextHeight / 4, mCurrentPointTextBgStartX + mCurrentPointTextBgWidth, lastY + mCurrentPointTextHeight / 4)
-            drawRoundRect(rect,50F, 50F, pCurrentPointTextBgPaint!!)
-        }
-    }
-
-    private fun drawCurrentPointText(canvas: Canvas) {
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace){
-            drawTextBase(lineChartDatas?.get(lineChartDatas?.size!! - 1)!!, mCurrentPointTextBgStartX + mCurrentPointTextBgWidth/2 - mCurrentPointTextWidth/2, lastY, pCurrentPointTextPaint!!)
-        }
-
-    }
-
-
-    private fun drawCurrentPointLine(canvas: Canvas) {
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                drawLine(0F, lastY, lastX - mInnerRadius - mOutRingWidth, lastY, pCurrentPointLinePaint!!)
-                drawLine(lastX + mInnerRadius + mOutRingWidth, lastY, mCurrentPointTextBgStartX, lastY, pCurrentPointLinePaint!!)
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                drawLine(0F - mMoveX, lastY, lastX - mInnerRadius - mOutRingWidth - mMoveX, lastY, pCurrentPointLinePaint!!)
-                drawLine(lastX + mInnerRadius + mOutRingWidth - mMoveX, lastY, mCurrentPointTextBgStartX, lastY, pCurrentPointLinePaint!!)
-            }
-        }
-    }
-
-    private fun drawCurrentPointOutCircle(canvas: Canvas) {
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                drawCircle(lastX, lastY, mOutRadius, pCurrentPointOutCirclePaint!!)
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                drawCircle(lastX - mMoveX, lastY, mOutRadius, pCurrentPointOutCirclePaint!!)
-            }
-        }
-    }
-
-
-    private fun drawCurrentPointInnerCircle(canvas: Canvas) {
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                drawCircle(lastX, lastY, mInnerRadius, pCurrentPointInnerCirclePaint!!)
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                drawCircle(lastX - mMoveX, lastY, mInnerRadius, pCurrentPointInnerCirclePaint!!)
-            }
-        }
-    }
-
-    private fun drawCurrentPointDash(canvas: Canvas) {
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                drawLine(lastX, 0F, lastX, mTableHeight.toFloat(), pCurrentPointDashPaint!!)
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                drawLine(lastX - mMoveX, 0F, lastX - mMoveX, mTableHeight.toFloat(), pCurrentPointDashPaint!!)
-            }
-        }
-    }
-
-    //绘制折线和背景
-    private fun drawLineChart(canvas: Canvas, list: ArrayList<String>) { //path需要重置, 否则会导致两次折线重叠
-        path.reset()
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) { //折线第一个点
-            val valuePercentFirst = (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(list[0])) / (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(valueDatas[valueDatas.count() - 1]))
-            firstY = valuePercentFirst * mTableHeight
-            path.moveTo(0F, firstY)
-            //折线最后一个点x和y
-            val valuePercentLast = (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(list[lineChartDatas?.count()!! - 1])) / (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(valueDatas[valueDatas.count() - 1]))
-            lastY = valuePercentLast * mTableHeight
-            lastX = (list.count() - 1) * aXPointGapSize.toFloat()
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                mCurrentPointTextBgStartX = lastX + mInnerRadius + mOutRingWidth + mCurrentPointRightLineWidth
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                mCurrentPointTextBgStartX = lastX + mInnerRadius + mOutRingWidth + mCurrentPointRightLineWidth - mMoveX
-            }
-            //折线中间点的y
-            var valueYProgress = 0F
-
-            //折线中间点的y
-            var valueXProgress = 0F
-
-            var linearGradient: LinearGradient = LinearGradient(0F, 0F, 0F, mTableHeight.toFloat(), intArrayOf(Color.parseColor("#99BAEFE6"), Color.parseColor("#99D7F5F0"), Color.parseColor("#99F9FEFD")), floatArrayOf(0.5f, 0.65f, 0.85f), Shader.TileMode.REPEAT)
-
-
-            //折线中间的点以及最后的点
-            repeat(list.count() - 1) {
-                val valuePercent = (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(list[it + 1])) / (NumberUtils.parseFloat(valueDatas[0]) - NumberUtils.parseFloat(valueDatas[valueDatas.count() - 1]))
-                valueYProgress = valuePercent * mTableHeight
-                valueXProgress = (it + 1) * aXPointGapSize.toFloat()
-                path.lineTo(valueXProgress, valueYProgress)
-
-            }
-
-
-            pShadowPaint?.shader = linearGradient
-            if(list.count() * aXPointGapSize / mTableWidth == 0) { //画线
-                drawPath(path, pLineChartPaint!!)
-                //画背景
-                path.lineTo(lastX, mTableHeight.toFloat())
-                path.lineTo(0F, mTableHeight.toFloat())
-                path.close()
-                drawLineChartBg(this, path)
-            } else if(list.count() * aXPointGapSize / mTableWidth > 0) {
-                path.offset(-mMoveX, 0F) //画线
-                drawPath(path, pLineChartPaint!!)
-                //画背景
-                path.lineTo(lastX - mMoveX, mTableHeight.toFloat())
-                path.lineTo(0F - mMoveX, mTableHeight.toFloat())
-                path.close()
-                drawLineChartBg(this, path)
-            }
-        }
-    }
-
-
-    private fun drawLineChartBg(canvas: Canvas, path: Path) {
-        canvas.drawPath(path, pShadowPaint!!)
-    }
-
-    private fun drawYAxisText(canvas: Canvas) {
-        repeat(aHorRulerCountNum) {
-            canvas.withTranslation((width - mPaddingEndToTable + mPaddingRightTextToTable).toFloat(), (it * mHorRulerGapSize + paddingTop).toFloat() + mTopDisplaySpace) {
-                drawValueTextBase(it, mHorRulerGapSize / 10)
-            }
-        }
-    }
-
-    private fun drawXAxisText(canvas: Canvas) {
-        var y = mPaddingBoottomTextToTable / 2
-        canvas.withTranslation(paddingLeft.toFloat(), ((aHorRulerCountNum - 1) * mHorRulerGapSize + mPaddingBoottomTextToTable / 4 + mTopDisplaySpace).toFloat()) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                repeat(aVerRulerCountNum) {
-                    if(it == 0) {
-                        drawTimeTextBase(true, it, (0F + mVerRulerGapSize * it).toInt(), y)
-                    } else {
-                        drawTimeTextBase(false, it, (0F + mVerRulerGapSize * it).toInt(), y)
-                    }
-                }
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                var i = (lineChartDatas?.count()!! * aXPointGapSize) / mVerRulerGapSize
-                repeat((lineChartDatas?.count()!! * aXPointGapSize) / mVerRulerGapSize + 1) {
-
-                    if(it == 0) {
-                        drawTimeTextBase(true, it, (0F + mVerRulerGapSize * it - mMoveX).toInt(), y)
-                    } else {
-                        drawTimeTextBase(false, it, (0F + mVerRulerGapSize * it - mMoveX).toInt(), y)
-                    }
-                }
-            }
-        }
-
-    }
-
-
-    private fun drawTableRuler(canvas: Canvas) {
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                repeat(aHorRulerCountNum) {
-                    canvas.drawLine(0F, (it * mHorRulerGapSize).toFloat(), (mVerRulerGapSize * (aVerRulerCountNum - 1)).toFloat(), (it * mHorRulerGapSize).toFloat(), pRulerPaint!!)
-                }
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                repeat(aHorRulerCountNum) {
-                    canvas.drawLine(0F, (it * mHorRulerGapSize).toFloat(), mWidth.toFloat(), (it * mHorRulerGapSize).toFloat(), pRulerPaint!!)
-                }
-            }
-        }
-
-        //绘制竖线
-        canvas.withTranslation(paddingLeft.toFloat(), paddingTop.toFloat() + mTopDisplaySpace) {
-            if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth == 0) {
-                repeat(aVerRulerCountNum) {
-                    canvas.drawLine(0F + (it * mVerRulerGapSize).toFloat(), 0F, (it * mVerRulerGapSize).toFloat(), ((aHorRulerCountNum - 1) * mHorRulerGapSize).toFloat(), pRulerPaint!!)
-                }
-            } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-                var i = (lineChartDatas?.count()!! * aXPointGapSize) / mVerRulerGapSize
-                repeat((lineChartDatas?.count()!! * aXPointGapSize) / mVerRulerGapSize + 1) {
-                    canvas.drawLine((it * mVerRulerGapSize).toFloat() - mMoveX, 0F, (it * mVerRulerGapSize).toFloat() - mMoveX, ((aHorRulerCountNum - 1) * mHorRulerGapSize).toFloat(), pRulerPaint!!)
-                }
-            }
-        }
-    }
 
     /**
      * @param index 数据index
@@ -520,81 +687,13 @@ class LwjLineChartView : View {
         return textBounds.height()
     }
 
-    /**
-     * @param dataIndex 集合里面数据的下标
-     * @param y 绘制的y坐标
-     * */
-    private fun Canvas.drawValueTextBase(dataIndex: Int, y: Int) {
-        val text = valueDatas[dataIndex] //param: 绘制文字的左边起始位置(即y轴线最中间位置减去中间文本的一半长度就是左边起始位置)
-        val textBounds = Rect()
-        pXAxisTimePaint?.getTextBounds(text, 0, text.length, textBounds)
-        mValueTextHeight = textBounds.height()
-        mValueTextWidth = textBounds.width()
-        val startDrawX: Int = 0 //param: 文字的基线
-        val fm: Paint.FontMetricsInt = pXAxisTimePaint!!.fontMetricsInt
-        val baseLine = y + (fm.bottom - fm.top) / 2 - fm.bottom
-        drawText(text, startDrawX.toFloat(), baseLine.toFloat(), pXAxisTimePaint!!)
-
-    }
-
-    /**
-     * @param string 绘制的文本内容
-     * @param startDrawX 绘制的文本起始坐标位置
-     * @param y 绘制的文本高度的一半所对应的y轴坐标
-     * @param paint 绘制文本的画笔
-     * */
-    private fun Canvas.drawTextBase(string: String, startDrawX: Float, y: Float, paint: Paint){
-        val fm: Paint.FontMetricsInt = paint.fontMetricsInt
-        val baseLine = y + (fm.bottom - fm.top) / 2 - fm.bottom
-        drawText(string, startDrawX, baseLine ,paint)
-    }
-
-
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-        mHeight = measuredHeight
-        mWidth = measuredWidth
-        mHorRulerGapSize = (height - paddingTop - paddingBottom - mPaddingBoottomTextToTable - 2*mTopDisplaySpace) / (aHorRulerCountNum - 1) //这个20是给默认底部文字留的空间
-        mVerRulerGapSize = (width - paddingLeft - paddingRight - mPaddingEndToTable ) / (aVerRulerCountNum - 1) //这个50是给默认右边文字留的空间
-
-        //初始60min时间段的两个点间距
-        aXPointGapSize = (width - paddingLeft - paddingRight - mPaddingEndToTable )/ lineChartDatas?.count()!!
-        /*if(lineChartDatas?.count() == 1800) {
-            aXPointGapSize = (width - paddingLeft - paddingRight - mPaddingEndToTable )/ lineChartDatas?.count()!!
-        } else if(lineChartDatas?.count()!! * aXPointGapSize / mTableWidth > 0) {
-
-        }*/
-
-        mTableHeight = mHorRulerGapSize * (aHorRulerCountNum - 1)
-        mTableWidth = width - paddingLeft - paddingRight - mPaddingEndToTable
-        mMoveX = ((lineChartDatas?.count()!! - 1) * aXPointGapSize - mTableWidth).toFloat() + mInitLeftMoveX
-        mInitMoveX = mMoveX
-    }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val height = MeasureSpec.getSize(heightMeasureSpec) + mTopDisplaySpace
-        val width = MeasureSpec.getSize(widthMeasureSpec)
-        setMeasuredDimension(width, height)
-    }
-
-    fun dp2px(dp: Int): Int {
-        val density = context.resources.displayMetrics.density
-        return (dp * density + 0.5).toInt()
-    }
-
-    private fun sp2px(spValue: Int): Int {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue.toFloat(), resources.displayMetrics)
-            .toInt()
-    }
-
     private fun initAttrs(context: Context, attributeSet: AttributeSet) {
         var array: TypedArray = context.obtainStyledAttributes(attributeSet, R.styleable.LwjLineChartView)
         aBgColor = array.getColor(R.styleable.LwjLineChartView_bgColor, Color.BLACK)
         aRulerColor = array.getColor(R.styleable.LwjLineChartView_rulerColor, Color.WHITE)
         mHorRulerGapSize = array.getDimensionPixelSize(R.styleable.LwjLineChartView_yRulerGapSize, dp2px(35)) // aXRulerGapSize = array.getDimensionPixelSize(R.styleable.LwjLineChartView_xRulerGapSize, dp2px(120))
         aHorRulerCountNum = array.getInt(R.styleable.LwjLineChartView_yRulerCountNum, 11)
-        aXPointGapSize = array.getDimensionPixelSize(R.styleable.LwjLineChartView_xPointGapSize, dp2px(2))
+        //aXPointGapSize = array.getDimensionPixelSize(R.styleable.LwjLineChartView_xPointGapSize, dp2px(2))
         aRulerLineSize = array.getDimensionPixelSize(R.styleable.LwjLineChartView_rulerLineSize, 2)
         aXAxisTextColor = array.getColor(R.styleable.LwjLineChartView_xAxisTextColor, Color.WHITE)
         aXAxisTextSize = array.getDimensionPixelSize(R.styleable.LwjLineChartView_xAxisTextSize, sp2px(18))
@@ -609,5 +708,14 @@ class LwjLineChartView : View {
         aCurrentPointTextColor = array.getColor(R.styleable.LwjLineChartView_currentPointTextColor, Color.BLACK)
         aCurrentPointTextBgColor = array.getColor(R.styleable.LwjLineChartView_currentPointTextBgColor, Color.WHITE)
         array.recycle()
+    }
+
+
+    fun Float.ceil(): Int{
+        return Math.ceil(this.toDouble()).toInt()
+    }
+
+    fun Double.ceil(): Int{
+        return Math.ceil(this).toInt()
     }
 }

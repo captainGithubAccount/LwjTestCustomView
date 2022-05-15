@@ -35,6 +35,10 @@ android {
 }
 
 dependencies {
+
+    //gson配置
+    implementation 'com.google.code.gson:gson:2.8.9'
+    
     implementation 'com.github.captainGithubAccount:LwjCommon:2.0.3'
 
     //okhttp配置

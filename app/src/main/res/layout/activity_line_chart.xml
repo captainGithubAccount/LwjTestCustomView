@@ -12,7 +12,6 @@
         android:layout_weight="1.5">
         <com.lwj.lwjtest_coustomview.LwjLineChartView
             android:id="@+id/lcv_test"
-            app:xPointGapSize="@dimen/dp_8"
             android:paddingLeft="@dimen/dp_2"
             android:paddingTop="2dp"
             app:xAxisTextSize="@dimen/sp_10"
