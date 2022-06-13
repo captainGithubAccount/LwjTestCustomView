@@ -1,38 +1,33 @@
 package com.lwj.lwjtest_coustomview
 
-import android.os.Build
+import android.graphics.Color
+import android.os.Bundle
 import android.util.Log
-import androidx.annotation.RequiresApi
+import com.alibaba.fastjson.JSON
+import com.alibaba.fastjson.TypeReference
 import com.example.lwj_common.common.ui.controll.tools.ktx.fromJson
-import com.example.lwj_common.common.ui.controll.tools.ktx.isUseful
-import com.example.lwj_common.common.ui.controll.tools.ktx.toJson
-import com.example.lwj_common.common.ui.controll.tools.utils.DateUtil
+import com.example.lwj_common.common.ui.controll.tools.utils.JsonUtil
 import com.example.oinkredito.base.ui.controll.activity.BaseDbActivity
 import com.google.gson.JsonSyntaxException
 import com.lwj.lwjtest_coustomview_testview.databinding.ActivityLineChartBinding
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
-import okio.ByteString
-import org.json.JSONException
-import org.json.JSONObject
-import java.util.stream.Collectors
 
 class LineChartActivity : BaseDbActivity<ActivityLineChartBinding>() {
+    var lineChartList: ArrayList<Double>? = null
+    var timeTampList: ArrayList<Long>? = null
     val webSocketUrl: String = "wss://ws.binaryws.com/websockets/v3?app_id=1089"
     var mWebSocket: WebSocket? = null
     var mIsConnetion: Boolean = false
     var mTime: Int = 60
 
-    var lineChartList: List<Double> = arrayListOf()
-
-    var timeStampList: List<Long> = arrayListOf()
-    var valueList: List<Double> = arrayListOf()
-
     var data: ArrayList<Double> = arrayListOf()
     override fun observe() {
 
     }
+
+
 
     private fun getConnetWebSocket(webSocketUrl: String) {
 
@@ -47,6 +42,7 @@ class LineChartActivity : BaseDbActivity<ActivityLineChartBinding>() {
                 }
 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    t.printStackTrace()
                     super.onFailure(webSocket, t, response)
                 }
 
@@ -68,8 +64,6 @@ class LineChartActivity : BaseDbActivity<ActivityLineChartBinding>() {
                     mWebSocket = webSocket
                     mIsConnetion = true
                     queryAll()
-
-
                 }
             })
     }
@@ -77,12 +71,21 @@ class LineChartActivity : BaseDbActivity<ActivityLineChartBinding>() {
 
     //@RequiresApi(Build.VERSION_CODES.N)
     private fun showUi(data: WebSocketResponse) {
-        if(data.history != null && data.msg_type == "history" && data.history.prices.isNotEmpty() && data.history.times.isNotEmpty() && data.echo_req != null){
-            var lineChartList: List<Double> = data.history.prices
-            var timeTampList: List<Long> = data.history.times
-            binding.lcvTest.setDatas(lineChartList as ArrayList<Double>, timeTampList as ArrayList<Long>)
-            binding.lcvTest.postInvalidate()
+        if(data.msg_type == "history" && data.history != null && data.history.prices.isNotEmpty() && data.history.times.isNotEmpty() && data.echo_req != null){
+            lineChartList = null
+            timeTampList = null
+            lineChartList = data.history.prices as ArrayList<Double>
+            timeTampList = data.history.times as ArrayList<Long>
+            Log.d("---",lineChartList?.maxOrNull().toString() + "----" + lineChartList?.minOrNull().toString())
+            binding.lcvTest.setDatas(lineChartList!!, timeTampList!!)
+            queryRealTimePoint()
 
+        }else if(data.msg_type == "tick" && data.tick != null && !lineChartList.isNullOrEmpty() && !timeTampList.isNullOrEmpty()){
+            lineChartList?.removeAt(0)
+            lineChartList?.add(data.tick.quote)
+            timeTampList?.removeAt(0)
+            timeTampList?.add(data.tick.epoch)
+            binding.lcvTest.setDatas(lineChartList!!, timeTampList!!, true)
         }
     }
 
@@ -99,13 +102,38 @@ class LineChartActivity : BaseDbActivity<ActivityLineChartBinding>() {
         mWebSocket?.send(requestBody.toJson());
     }
 
+    private fun queryRealTimePoint(){
+        var requestBody = mutableMapOf<String, Any>()
+        requestBody["ticks"] =  "R_100"
+        mWebSocket?.send(requestBody.toJson())
+    }
+
     /*
     {"ticks_history": "R_100", "count": "31", "end": "latest", "style": "ticks"}
     {"ticks": "R_100"}
     */
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Log.d("---stake序列化前", binding.lcvTest.getStakeDatas().toFastJson())
+        outState.putString("Stake_state", binding.lcvTest.getStakeDatas().toFastJson())
+    }
+
+    override fun afterInitView(savedInstanceState: Bundle?) {
+        super.afterInitView(savedInstanceState)
+        if(savedInstanceState != null){
+            val map: HashMap<String, Any?>? = (savedInstanceState.get("Stake_state") as String).fromFastJson(HashMap<String, Any?>())
+            Log.d("---stake序列化后", map.toFastJson())
+            binding.lcvTest.setStakeFromSaveInstance(map as HashMap<String, Any?>)
+        }
+    }
+
     override fun ActivityLineChartBinding.initView() {
         getConnetWebSocket(webSocketUrl)
+
+        binding.llStake.setOnClickListener {
+            binding.lcvTest.setStake(Color.GREEN)
+        }
 
 
 

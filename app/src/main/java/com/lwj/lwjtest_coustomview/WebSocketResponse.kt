@@ -31,7 +31,7 @@ data class History(
 data class Tick(
     val ask: Double,
     val bid: Double,
-    val epoch: Int,
+    val epoch: Long,
     val id: String,
     val pip_size: Int,
     val quote: Double,

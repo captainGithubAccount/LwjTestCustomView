@@ -104,9 +104,15 @@
 
         <!-- 图形填充颜色 -->
 
+    </declare-styleable>
 
-
-
-        
+    <!-- progress bar-->
+    <declare-styleable name="CustomProgressBar">
+        <attr name="progress" format="integer"/>
+        <attr name="bar_bg" format="color"/>
+        <attr name="bar" format="color"/>
+        <attr name="circle_height" format="dimension"/>
+        <attr name="circle_solid_color" format="color"/>
+        <attr name="text_color" format="color"/>
     </declare-styleable>
 </resources>

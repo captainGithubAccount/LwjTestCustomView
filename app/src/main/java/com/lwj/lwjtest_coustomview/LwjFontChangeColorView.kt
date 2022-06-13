@@ -93,7 +93,8 @@ class LwjFontChangeColorView : AppCompatTextView {
 
     }
 
-    private fun drawClibText(canvas: Canvas?, paint: Paint, startClibPos: Int, endClibPos: Int) { // 将变色区域裁剪为左右两边(一边变色, 一边不变色), 注意是先裁减, 再画, 而不是先画, 后裁减
+    private fun drawClibText(canvas: Canvas?, paint: Paint, startClibPos: Int, endClibPos: Int) {
+        // 将变色区域裁剪为左右两边(一边变色, 一边不变色), 注意是先裁减, 再画, 而不是先画, 后裁减
         canvas?.save()
         var rect = Rect(startClibPos, 0, endClibPos.toInt(), height)
         canvas?.clipRect(rect)

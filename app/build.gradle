@@ -35,6 +35,7 @@ android {
 }
 
 dependencies {
+    implementation 'com.alibaba:fastjson:1.2.71'
 
     //gson配置
     implementation 'com.google.code.gson:gson:2.8.9'

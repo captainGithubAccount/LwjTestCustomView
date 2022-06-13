@@ -7,4 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="back_tran">#B3778899</color>
+    <color name="top_white_tran">#B3FFFFFF</color>
+    <color name="tran">#00000000</color>
 </resources>

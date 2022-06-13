@@ -1,92 +1,211 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/color_333333"
+    android:orientation="vertical"
 
     tools:context="com.lwj.lwjtest_coustomview.MainActivity">
-    <LinearLayout
-        android:orientation="vertical"
+
+    <com.lwj.lwjtest_coustomview.SlidingConflictNestScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.lwj.lwjtest_coustomview.LwjTestView
-            android:layout_marginTop="@dimen/dp_10"
-            android:background="@color/purple_200"
-            app:myTextSize="@dimen/sp_20"
-            app:myText="江西罗文杰"
-            android:padding="@dimen/dp_10"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
 
-        <com.lwj.lwjtest_coustomview.LwjQQStepView
-            android:id="@+id/cv_qqstep"
-            android:layout_marginTop="@dimen/dp_10"
-            app:textStepSize="@dimen/sp_30"
-            app:arcWidth="@dimen/dp_6"
-            android:layout_width="@dimen/dp_100"
-            android:layout_height="@dimen/dp_100"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <LinearLayout
-            android:paddingTop="@dimen/dp_10"
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <com.lwj.lwjtest_coustomview.LwjFontChangeColorView
-                android:id="@+id/cv_font_change_color"
-                android:textSize="@dimen/sp_16"
+            android:layout_height="match_parent">
 
-                android:paddingStart="@dimen/dp_10"
-                android:text="玩转字体变色"
-                app:changeColor="@color/color_108EE9"
+            <com.lwj.lwjtest_coustomview.LwjTestView
+                android:layout_marginTop="@dimen/dp_10"
+                android:background="@color/purple_200"
+                app:myTextSize="@dimen/sp_20"
+                app:myText="江西罗文杰"
+                android:padding="@dimen/dp_10"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
-            <TextView
-                android:layout_marginStart="@dimen/dp_10"
-                android:background="@drawable/bg_confirm"
-                android:id="@+id/btn_left_to_right"
-                android:layout_width="wrap_content"
+
+            <com.lwj.lwjtest_coustomview.LwjQQStepView
+                android:id="@+id/cv_qqstep"
+                android:layout_marginTop="@dimen/dp_10"
+                app:textStepSize="@dimen/sp_30"
+                app:arcWidth="@dimen/dp_6"
+                android:layout_width="@dimen/dp_100"
+                android:layout_height="@dimen/dp_100"/>
+
+            <LinearLayout
+                android:paddingTop="@dimen/dp_10"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="从左往右滑"/>
-            <TextView
-                android:layout_marginStart="@dimen/dp_10"
-                android:background="@drawable/bg_confirm"
-                android:layout_width="wrap_content"
-                android:id="@+id/btn_right_to_left"
+                android:orientation="horizontal">
+                <com.lwj.lwjtest_coustomview.LwjFontChangeColorView
+                    android:id="@+id/cv_font_change_color"
+                    android:textSize="@dimen/sp_16"
+
+                    android:paddingStart="@dimen/dp_10"
+                    android:text="玩转字体变色"
+                    app:changeColor="@color/color_108EE9"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+                <TextView
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:background="@drawable/bg_confirm"
+                    android:id="@+id/btn_left_to_right"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="从左往右滑"/>
+                <TextView
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:background="@drawable/bg_confirm"
+                    android:layout_width="wrap_content"
+                    android:id="@+id/btn_right_to_left"
+                    android:layout_height="wrap_content"
+                    android:text="从右往左滑"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:gravity="center"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="从右往左滑"/>
+                android:orientation="horizontal">
+                <com.lwj.lwjtest_coustomview.LwjLoadingView
+                    android:id="@+id/cv_loading_view"
+                    android:layout_width="@dimen/dp_50"
+                    android:layout_height="@dimen/dp_50"/>
+
+                <TextView
+                    android:id="@+id/tv_loading_start"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:background="?attr/selectableItemBackground"
+                    android:text="开始" />
+            </LinearLayout>
+            <com.lwj.lwjtest_coustomview.LwjStarGradeView
+                android:layout_gravity="center_horizontal"
+                app:starNumber="5"
+                app:starNormal="@drawable/ic_r"
+                app:starSelect="@drawable/ic_t"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <com.lwj.lwjtest_coustomview.CustomProgressBar
+
+               app:circle_height="@dimen/dp_20"
+                android:paddingStart="@dimen/dp_20"
+                android:paddingEnd="@dimen/dp_20"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dp_100"/>
 
         </LinearLayout>
+
+
+        <!-- <com.lwj.lwjtest_coustomview.ZheZhaoByLayerView
+
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"/>-->
 
         <LinearLayout
-            android:gravity="center"
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <com.lwj.lwjtest_coustomview.LwjLoadingView
-                android:id="@+id/cv_loading_view"
-                android:layout_width="@dimen/dp_50"
-                android:layout_height="@dimen/dp_50"/>
+            android:layout_height="match_parent">
 
-            <TextView
-                android:id="@+id/tv_loading_start"
+            <com.lwj.lwjtest_coustomview.LwjTestView
+                android:layout_marginTop="@dimen/dp_10"
+                android:background="@color/purple_200"
+                app:myTextSize="@dimen/sp_20"
+                app:myText="江西罗文杰"
+                android:padding="@dimen/dp_10"
                 android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <com.lwj.lwjtest_coustomview.LwjQQStepView
+                android:layout_marginTop="@dimen/dp_10"
+                app:textStepSize="@dimen/sp_30"
+                app:arcWidth="@dimen/dp_6"
+                android:layout_width="@dimen/dp_100"
+                android:layout_height="@dimen/dp_100"/>
+
+            <LinearLayout
+                android:paddingTop="@dimen/dp_10"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/dp_10"
-                android:background="?attr/selectableItemBackground"
-                android:text="开始" />
+                android:orientation="horizontal">
+                <com.lwj.lwjtest_coustomview.LwjFontChangeColorView
+                    android:textSize="@dimen/sp_16"
+
+                    android:paddingStart="@dimen/dp_10"
+                    android:text="玩转字体变色"
+                    app:changeColor="@color/color_108EE9"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+                <TextView
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:background="@drawable/bg_confirm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="从左往右滑"/>
+                <TextView
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:background="@drawable/bg_confirm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="从右往左滑"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <com.lwj.lwjtest_coustomview.LwjLoadingView
+                    android:layout_width="@dimen/dp_50"
+                    android:layout_height="@dimen/dp_50"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_10"
+                    android:background="?attr/selectableItemBackground"
+                    android:text="开始" />
+            </LinearLayout>
+            <com.lwj.lwjtest_coustomview.LwjStarGradeView
+                android:layout_gravity="center_horizontal"
+                app:starNumber="5"
+                app:starNormal="@drawable/ic_r"
+                app:starSelect="@drawable/ic_t"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <com.lwj.lwjtest_coustomview.CustomProgressBar
+
+                android:paddingStart="@dimen/dp_20"
+                android:paddingEnd="@dimen/dp_20"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
         </LinearLayout>
-        <com.lwj.lwjtest_coustomview.LwjStarGradeView
-            android:layout_gravity="center_horizontal"
-            app:starNumber="5"
-            app:starNormal="@drawable/ic_r"
-            app:starSelect="@drawable/ic_t"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+
+        <!---->
+
 
     </LinearLayout>
 
 
+    </com.lwj.lwjtest_coustomview.SlidingConflictNestScrollView>
+</LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+<!--
+</androidx.core.widget.NestedScrollView>-->
